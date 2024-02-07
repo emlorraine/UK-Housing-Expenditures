@@ -6,14 +6,10 @@
  * @param _data						-- the  
  */
 
-StackedAreaChart = function(_parentElement, _data){
-	this.parentElement = _parentElement;
+StackedAreaChart = function (_parentElement, _data) {
+    this.parentElement = _parentElement;
     this.data = _data;
     this.displayData = []; // see data wrangling
-
-    // DEBUG RAW DATA
-    console.log(this.data);
-
     this.initVis();
 }
 
@@ -23,36 +19,36 @@ StackedAreaChart = function(_parentElement, _data){
  * Initialize visualization (static content, e.g. SVG area or axes)
  */
 
-StackedAreaChart.prototype.initVis = function(){
-	var vis = this;
+StackedAreaChart.prototype.initVis = function () {
+    var vis = this;
 
-	vis.margin = { top: 40, right: 0, bottom: 60, left: 60 };
+    vis.margin = { top: 40, right: 0, bottom: 60, left: 60 };
 
-	vis.width = 800 - vis.margin.left - vis.margin.right,
-    vis.height = 400 - vis.margin.top - vis.margin.bottom;
+    vis.width = 800 - vis.margin.left - vis.margin.right,
+        vis.height = 400 - vis.margin.top - vis.margin.bottom;
 
 
-  // SVG drawing area
-	vis.svg = d3.select("#" + vis.parentElement).append("svg")
-	    .attr("width", vis.width + vis.margin.left + vis.margin.right)
-	    .attr("height", vis.height + vis.margin.top + vis.margin.bottom)
-       .append("g")
-	    .attr("transform", "translate(" + vis.margin.left + "," + vis.margin.top + ")");
+    // SVG drawing area
+    vis.svg = d3.select("#" + vis.parentElement).append("svg")
+        .attr("width", vis.width + vis.margin.left + vis.margin.right)
+        .attr("height", vis.height + vis.margin.top + vis.margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + vis.margin.left + "," + vis.margin.top + ")");
 
-	// TO-DO: Overlay with path clipping
+    // TO-DO: Overlay with path clipping
     vis.svg.append("defs").append("clipPath")
-    .attr("id", "clip")
-    .append("rect")
-    .attr("width", vis.width)
-    .attr("height", vis.height)
+        .attr("id", "clip")
+        .append("rect")
+        .attr("width", vis.width)
+        .attr("height", vis.height)
 
-    
+
 
 
     // Scales and axes
     vis.x = d3.scaleTime()
         .range([0, vis.width])
-        .domain(d3.extent(vis.data, function(d) { return d.Year; }));
+        .domain(d3.extent(vis.data, function (d) { return d.Year; }));
 
     vis.y = d3.scaleLinear()
         .range([vis.height, 0]);
@@ -70,11 +66,11 @@ StackedAreaChart.prototype.initVis = function(){
     vis.svg.append("g")
         .attr("class", "y-axis axis");
 
-    
 
 
-	// TO-DO: Initialize stack layout
-	var dataCategories = colorScale.domain();
+
+    // TO-DO: Initialize stack layout
+    var dataCategories = colorScale.domain();
     stack = d3.stack().keys(dataCategories);
     vis.stackedData = stack(vis.data)
     // console.log(vis.stackedData)
@@ -82,16 +78,16 @@ StackedAreaChart.prototype.initVis = function(){
     // TO-DO: Rearrange data
 
     // TO-DO: Stacked area layout
-	vis.area = d3.area()
-    .x(function(d) { return vis.x(d.data.Year); })
-    .y0(function(d) { return vis.y(d[0]); })
-    .y1(function(d) { return vis.y(d[1]); });
+    vis.area = d3.area()
+        .x(function (d) { return vis.x(d.data.Year); })
+        .y0(function (d) { return vis.y(d[0]); })
+        .y1(function (d) { return vis.y(d[1]); });
 
-	// TO-DO: Tooltip placeholder
+    // TO-DO: Tooltip placeholder
 
     vis.text = vis.svg.append("text").attr("x", 30).attr("y", 30)
 
-	// TO-DO: (Filter, aggregate, modify data)
+    // TO-DO: (Filter, aggregate, modify data)
     vis.wrangleData();
 }
 
@@ -101,13 +97,13 @@ StackedAreaChart.prototype.initVis = function(){
  * Data wrangling
  */
 
-StackedAreaChart.prototype.wrangleData = function(){
-	var vis = this;
+StackedAreaChart.prototype.wrangleData = function () {
+    var vis = this;
 
-	// In the first step no data wrangling/filtering needed
-	vis.displayData = vis.stackedData;
+    // In the first step no data wrangling/filtering needed
+    vis.displayData = vis.stackedData;
 
-	// Update the visualization
+    // Update the visualization
     vis.updateVis();
 }
 
@@ -118,47 +114,47 @@ StackedAreaChart.prototype.wrangleData = function(){
  * Function parameters only needed if different kinds of updates are needed
  */
 
-StackedAreaChart.prototype.updateVis = function(){
-	var vis = this;
+StackedAreaChart.prototype.updateVis = function () {
+    var vis = this;
 
-	// Update domain
+    // Update domain
 
 
 
-	// Get the maximum of the multi-dimensional array or in other words, get the highest peak of the uppermost layer
-	vis.y.domain([0, d3.max(vis.displayData, function(d) {
-			return d3.max(d, function(e) {
-				return e[1];
-			});
-		})
-	]);
+    // Get the maximum of the multi-dimensional array or in other words, get the highest peak of the uppermost layer
+    vis.y.domain([0, d3.max(vis.displayData, function (d) {
+        return d3.max(d, function (e) {
+            return e[1];
+        });
+    })
+    ]);
 
     var dataCategories = colorScale.domain();
 
-// Draw the layers
+    // Draw the layers
     var categories = vis.svg.selectAll(".area")
         .data(vis.displayData);
 
     categories.enter().append("path")
         .attr("class", "area")
         .merge(categories)
-        .style("fill", function(d,i) {
+        .style("fill", function (d, i) {
             return colorScale(dataCategories[i]);
         })
-        .attr("d", function(d) {
+        .attr("d", function (d) {
             return vis.area(d);
         })
-        .on("mouseover", function(d){
-		    vis.text.text(d.key)
-	    });
+        .on("mouseover", function (d) {
+            vis.text.text(d.key)
+        });
 
 
     // TO-DO: Update tooltip text
 
-	categories.exit().remove();
+    categories.exit().remove();
 
 
-	// Call axis functions with the new domain 
-	vis.svg.select(".x-axis").call(vis.xAxis);
+    // Call axis functions with the new domain 
+    vis.svg.select(".x-axis").call(vis.xAxis);
     vis.svg.select(".y-axis").call(vis.yAxis);
 }
